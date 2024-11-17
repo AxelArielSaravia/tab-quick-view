@@ -1,0 +1,18 @@
+{
+    "manifest_version": 3,
+    "version": "0.0.0",
+    "name": "Tabs quick view",
+    "description": "Control tabs",
+    "author": "axarsar",
+    "action": {
+        "default_popup": "index.html",
+        "default_title": "Tabs quick view"
+    },
+    "permissions": [
+        "favicon",
+        "storage",
+        "tabs",
+        "tabGroups",
+        "sessions"
+    ]
+}

@@ -1,0 +1,339 @@
+:root {
+    --font: verdada,BlinkMacSystemFont,"Segoe UI","Roboto","Oxygen","Ubuntu","Cantarell","Fira Sans","Droid Sans","Helvetica Neue",sans-serif;
+
+    --icon-size: 20px;
+    --icon-size-small: 15px;
+
+    --font-size: 1.4rem;
+
+    --z-index-mid: 2;
+    --z-index-high: 3;
+
+    --item-height: 35px;
+
+    --border-radius: 5px;
+
+    --item-height: 40px;
+    /*height: 596px;*/
+}
+
+html {
+    background: #000;
+    font-size: 10px;
+    box-sizing: border-box;
+}
+
+body {
+    position: relative;
+    width: 380px;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font);
+    background: var(--color-bg);
+    color: var(--color);
+}
+
+html.dark {
+    --color: #efe8e8;
+    --color-bg: #3d3d3d;
+    --color-bg-d: #2b2b2b;
+
+    --color-hover: #4f4d4d;
+    --color-hover-l: #656363;
+
+    --grey: #c3c3c3;
+    --blue: #b4c3ff;
+    --red: #ff9494;
+    --yellow: #ffff9f;
+    --geen:#c3ffc3;
+    --pink: #ffc0f4;
+    --purple: #e7a9ff;
+    --cyan: #cbffff;
+    --orange: #faccac;
+
+
+    accent-color: #3d3d3d;
+    color-scheme: dark;
+}
+
+html.light {
+    --color: #3d3d3d;
+    --color-bg: #efe8e8;
+    --color-bg-d: #ddd6d6;
+
+    --color-hover: #fff7f7;
+    --color-hover-l: #ffffff;
+
+    accent-color: #efe8e8;
+    color-scheme: light;
+}
+
+:is(h1, h2, h3, p, select) {
+    font-size: var(--font-size);
+    margin: 0;
+}
+
+:is(button, select, label, input[type=checkbox], summary) {
+    cursor: pointer;
+}
+
+a {
+    color: var(--color);
+}
+
+summary::marker {
+    content: "";
+}
+
+
+body>header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid var(--color-hover-l);
+    margin-bottom: 5px;
+}
+
+body>header h1 {
+    font-weight: 600;
+    padding: 5px;
+}
+body>header a:hover {
+    background-color: var(--color-hover);
+}
+
+body>header nav {
+    display: flex;
+    align-items: center;
+}
+
+
+body>main::-webkit-scrollbar {
+    width: 8px;
+}
+
+body>main::-webkit-scrollbar-thumb {
+    background-color: var(--color-hover-l);
+}
+
+body>main {
+    height: 538px;
+    padding: 0 5px 5px;
+    overflow: auto;
+}
+
+main[data-show=container]>:not([name=container]),
+main[data-show=more]>:not([name=more]),
+main[data-show=keyboard]>:not([name=keyboard]) {
+    display:none;
+}
+
+main:not([data-windows-id]) [data-window]>summary [name=id] {
+    display: none;
+}
+
+summary {
+    display:flex;
+    align-items: center;
+    gap: 1ch;
+    border-radius: var(--border-radius);
+    height: var(--item-height);
+    padding: 0 5px;
+}
+
+summary:not(:hover) {
+    background-color: var(--color-bg);
+}
+
+summary:hover {
+    background-color: var(--color-hover);
+}
+
+summary:not(:hover)>.l {
+    display: none;
+}
+
+summary [name=title] {
+    flex-grow: 1;
+}
+
+summary .icon-triangle {
+    width: var(--icon-size-small);
+    padding: 2px;
+    transition: transform 200ms ease-out;
+}
+
+
+details:not([open])>summary .icon-triangle {
+    transform: rotate(90deg);
+}
+details[open]>summary .icon-triangle {
+    transform: rotate(180deg);
+}
+
+[data-window]>:not(details,summary) {
+    padding-left: 15px;
+}
+
+details[data-focus]>summary .icon-monitor {
+    fill: currentColor;
+}
+
+details[data-focus]>summary [name=title] span {
+    text-decoration: underline;
+}
+
+[data-group]>summary {
+    padding-left: 15px;
+}
+
+[data-group]>:not(summary) {
+    padding-left: 25px;
+}
+
+[data-group]>summary [name=title] {
+    display: flex;
+    align-items: center;
+}
+
+[data-group] .icon-triangle {
+    --color: var(--group-color);
+}
+
+[data-group]>summary span {
+    --color: var(--color-bg);
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 1ch;
+    padding: 3px 6px;
+    border-radius: var(--border-radius);
+    background-color: var(--group-color);
+    color: var(--color);
+}
+
+
+[data-tab] {
+    --tab-color-bg: var(--color-bg);
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    align-items: center;
+    border-radius: var(--border-radius);
+    width: 100%;
+    padding-right: 5px;
+    height: var(--item-height);
+    background-color: var(--tab-color-bg);
+}
+
+[data-tab]:hover {
+    --tab-color-bg: var(--color-hover);
+}
+
+[data-tab]:not(:hover)>.l {
+    display: none;
+}
+
+[data-tab]:not([data-pin]) [name=unpin] {
+    display: none;
+}
+
+[name=unpin]:hover::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 14px;
+    height: 90%;
+    width: 2px;
+    background: var(--color);
+    transform: rotate(45deg);
+}
+
+[data-tab] button[name=title] {
+    box-sizing: border-box;
+    flex-grow: 1;
+
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    border: none;
+
+    color: var(--color);
+    font-family: var(--font);
+
+    background: transparent;
+    overflow: hidden;
+
+    padding: 0 5px;
+    margin: 0;
+    height: 100%;
+}
+[data-tab] button[name=title]::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    width: 3ch;
+    height: 100%;
+    background: linear-gradient(to left, var(--tab-color-bg), transparent);
+}
+
+[data-tab] button[name=title] .title {
+    box-sizing: border-box;
+    white-space: nowrap;
+    padding: 3px 6px;
+    border-radius: var(--border-radius);
+}
+
+[data-tab][data-active] button[name=title] .title {
+    text-decoration: underline;
+}
+
+[data-tab]>div[name=more] {
+    display: none;
+}
+
+.shell {
+    position: relative;
+}
+
+.shell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.icon {
+    box-sizing: border-box;
+    width: var(--icon-size);
+    color: var(--color);
+}
+.icon-small {
+    box-sizing: border-box;
+    width: var(--icon-size-small);
+}
+
+.button-icon {
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    padding: 5px;
+    color: var(--color);
+    font-family: var(--font);
+    border-radius: var(--border-radius);
+}
+
+.button-icon:hover {
+    background: var(--color-hover-l);
+}
+
+.button-icon:not(:hover) {
+    background: transparent;
+}

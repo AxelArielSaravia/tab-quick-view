@@ -148,7 +148,7 @@ summary:not(:hover) {
     --summary-color-bg: var(--color-bg);
 }
 
-summary:hover {
+:not([data-dropable]) summary:hover {
     --summary-color-bg: var(--color-hover);
 }
 
@@ -324,7 +324,7 @@ details[data-focus]>summary [name=title] {
     outline-offset: -1px;
 }
 
-[data-tab]:hover {
+:not([data-dropable]) [data-tab]:hover {
     --tab-color-bg: var(--color-hover);
 }
 

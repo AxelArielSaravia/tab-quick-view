@@ -6,6 +6,20 @@ TODO
 const WINDOW_TYPE_NORMAL = "normal";
 const WINDOW_TYPE_POPUP = "popup";
 
+const TAB_ACTIVE = {active: true};
+const WINDOW_FOCUS = {focused: true};
+const TabPinned = {pinned: false};
+const TabMove = {
+    index: -1,
+    windowId: -1
+};
+const WindowCreate = {
+    focused: false,
+    tabId: undefined,
+    type: "normal",
+    url: undefined,
+};
+
 let DOMTemplate = document.getElementById("template").content;
 const DOMTemplateDrop = DOMTemplate.children[0];
 const DOMTemplateTab = DOMTemplate.children[1];
@@ -227,6 +241,7 @@ const render = function(windows, groups, DOMFragment) {
     return DOMFragment;
 };
 
+
 const DOMHeaderNavOnclick = function(event) {
     const target = event.target;
     console.info(target);
@@ -241,10 +256,6 @@ const DOMHeaderNavOnclick = function(event) {
     }
 };
 
-const TAB_ACTIVE = {active: true};
-const WINDOW_FOCUS = {focused: true};
-
-const TabPinned = {pinned: false};
 const group = [];
 
 const DOMMainOnclick = function(event) {
@@ -372,7 +383,7 @@ const DOMContainerOndragstart = function(event) {
         }
         DropTemporal.type = "tab";
         DropTemporal.element = target;
-        DropTemporal.id = target.id;
+        DropTemporal.id = target.tabId;
         DropTemporal.currentWindowId = target.windowId;
         DropTemporal.groupId = target.groupId;
         event.dataTransfer.effectAllowed = "all"
@@ -469,26 +480,50 @@ const DOMContainerOndrop = function(event) {
         clearTimeout(timeout);
         timeout = undefined;
     }
-    if (target.hasAttribute("data-drop")) {
-        if (target.hasAttribute("data-select")) {
-            target.after(
-                DropTemporal.element,
-                DropTemporal.element.nextElementSibling
-            );
-            target.removeAttribute("data-select");
-        }
-        console.info(event);
-
-    } else if (target.hasAttribute("data-select")) {
+    if (target.hasAttribute("data-select")) {
         const DOMParent = target.parentElement;
         target.removeAttribute("data-select");
-        if (DOMParent.hasAttribute("data-window")) {
+
+        if (target.hasAttribute("data-drop")) {
+            if (DOMParent.getAttribute("name") === "container") {
+                if (DropTemporal.type === "tab") {
+                    WindowCreate.focused = false;
+                    WindowCreate.tabId = DropTemporal.id;
+                    WindowCreate.type = "normal";
+
+
+                    chrome.windows.create(WindowCreate);
+                } else {
+
+                }
+            } else if (DOMParent.hasAttribute("data-group")) {
+                target.after(
+                    DropTemporal.element,
+                    DropTemporal.element.nextElementSibling
+                );
+            } else if (DOMParent.hasAttribute("data-popups")) {
+                target.after(
+                    DropTemporal.element,
+                    DropTemporal.element.nextElementSibling
+                );
+                //chrome.windows.create()
+            } else {
+                target.after(
+                    DropTemporal.element,
+                    DropTemporal.element.nextElementSibling
+                );
+            }
+        } else if (DOMParent.hasAttribute("data-window")) {
             DOMParent.children["normal"].append(
                 DropTemporal.element,
                 DropTemporal.element.nextElementSibling
             );
-            const id = DOMParent.windowId;
-            chrome.tabs.move();
+            if (DropTemporal.type === "tab") {
+                TabMove.index = -1;
+                TabMove.windowId = DOMParent.windowId;
+                chrome.tabs.move(DropTemporal.id, TabMove);
+            }
+
         } else if (DOMParent.hasAttribute("data-popups")) {
             DOMParent.append(
                 DropTemporal.element,

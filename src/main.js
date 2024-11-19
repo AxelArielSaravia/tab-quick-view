@@ -361,27 +361,19 @@ const DOMContainerOndragstart = function(event) {
         if (url !== null) {
             event.dataTransfer.setData("text/uri-list", url);
         }
-        if (target.groupId === undefined) {
-            throw Error("ERROR: [data-group] element not have groupId");
-        }
-        DropTemporal = target.groupId;
-
-        const id = target.tabId;
-        const windowId = target.windowId;
-        const groupId = target.groupId;
-        if (id === undefined) {
+        if (target.id === undefined) {
             throw Error("ERROR: [data-tab] element not have tabId")
         }
-        if (windowId === undefined) {
+        if (target.windowId === undefined) {
             throw Error("ERROR: [data-tab] element not have windowId");
         }
-        if (groupId === undefined) {
+        if (target.groupId === undefined) {
             throw Error("ERROR: [data-tab] element not have groupId");
         }
         DropTemporal.type = "tab";
         DropTemporal.element = target;
-        DropTemporal.id = id;
-        DropTemporal.currentWindowId = windowId;
+        DropTemporal.id = target.id;
+        DropTemporal.currentWindowId = target.windowId;
         DropTemporal.groupId = target.groupId;
         event.dataTransfer.effectAllowed = "all"
         DOMContainer.setAttribute("data-dropable", "");
@@ -390,6 +382,10 @@ const DOMContainerOndragstart = function(event) {
         event.dataTransfer.effectAllowed = "all"
         DropTemporal.element = target;
         DropTemporal.type = "group";
+
+        if (target.groupId === undefined) {
+            throw Error("ERROR: [data-tab] element not have groupId");
+        }
         DropTemporal.groupId = target.groupId;
 
         DOMContainer.setAttribute("data-dropable", "");

@@ -1,14 +1,18 @@
 "use strict";
-
+/*
+TODO
+ * Check chrome API errors
+*/
 const WINDOW_TYPE_NORMAL = "normal";
 const WINDOW_TYPE_POPUP = "popup";
 
 let DOMTemplate = document.getElementById("template").content;
-const DOMTemplateTab = DOMTemplate.children[0];
-const DOMTemplateGroup = DOMTemplate.children[1];
-const DOMTemplateWindow = DOMTemplate.children[2];
-const DOMTemplatePopups = DOMTemplate.children[3];
-const DOMTemplateSession = DOMTemplate.children[4];
+const DOMTemplateDrop = DOMTemplate.children[0];
+const DOMTemplateTab = DOMTemplate.children[1];
+const DOMTemplateGroup = DOMTemplate.children[2];
+const DOMTemplateWindow = DOMTemplate.children[3];
+const DOMTemplatePopups = DOMTemplate.children[4];
+const DOMTemplateSession = DOMTemplate.children[5];
 DOMTemplate = null;
 
 const DOMFragment = document.createDocumentFragment();
@@ -22,18 +26,13 @@ const DOMMore = DOMMain.children["more"];
  *  window: chrome.windows.Window
  * ) => HTMLElement}*/
 const initDOMWindow = function(DOMWindow, window) {
-    const id = String(window.id);
-    DOMWindow.setAttribute("data-id", id);
+    DOMWindow.windowId = window.id;
+    DOMWindow.focused = window.focused;
 
     if (window.focused) {
         DOMWindow.setAttribute("data-focus", "");
         DOMWindow.setAttribute("open", "");
     }
-
-    DOMWindow.firstElementChild
-        .children["title"]
-        .lastElementChild
-        .textContent = id;
 
     return DOMWindow;
 };
@@ -43,19 +42,22 @@ const initDOMWindow = function(DOMWindow, window) {
  *  group: chrome.tabGroups.TabGroup
  * ) => HTMLElement}*/
 const initDOMGroup = function(DOMGroup, group) {
-    DOMGroup.setAttribute("data-id", String(group.id));
-    DOMGroup.setAttribute("data-color", group.color);
-    DOMGroup.setAttribute("data-window-id", String(group.windowId));
+    DOMGroup.groupId = group.id;
+    DOMGroup.groupColor = group.color;
+    DOMGroup.windowId = group.windowId;
 
     DOMGroup.setAttribute("style", "--group-color:var(--"+group.color+")");
 
     if (group.title !== undefined) {
-        DOMGroup.setAttribute("data-title", group.title);
-        DOMGroup.firstElementChild.setAttribute("title", "group | "+String(group.title))
+        DOMGroup.groupTitle = group.title;
+        DOMGroup.firstElementChild.setAttribute(
+            "title",
+            "group | "+ group.title
+        );
 
         DOMGroup.firstElementChild
             .children["title"]
-            .firstElementChild
+            .lastElementChild
             .append(group.title);
     }
     return DOMGroup;
@@ -67,31 +69,31 @@ const initDOMGroup = function(DOMGroup, group) {
  *  type: "normal" | "popup"
  * ) => HTMLElement}*/
 const initDOMTab = function(DOMTab, tab, type) {
-    DOMTab.setAttribute("data-id", String(tab.id));
     if (type === "normal") {
         if (tab.active) {
             DOMTab.setAttribute("data-active", "");
         }
         if (tab.pinned) {
             DOMTab.setAttribute("data-pin", "");
+            DOMTab.setAttribute("draggable", "false");
         }
-    } else if (type === "popup") {
-        DOMTab.setAttribute("data-window-type", type);
     }
 
-    DOMTab.setAttribute("data-window-id", String(tab.windowId));
+    DOMTab.tabId = tab.id;
+    DOMTab.windowType = type;
+    DOMTab.windowId = tab.windowId;
+    DOMTab.groupId = tab.groupId;
 
-    const DOMCTitle = DOMTab.children["title"];
-    const DOMTitle = DOMCTitle.children["title"];
+    const DOMTitle = DOMTab.children["title"].children["title"];
     let title = "";
     if (tab.title !== undefined) {
-        DOMTab.setAttribute("data-title", tab.title);
+        DOMTab.tabTitle = tab.title;
         title = tab.title;
-        DOMTitle.textContent = tab.title;
+        DOMTitle.append(tab.title);
     }
 
     if (tab.url !== undefined) {
-        DOMTab.setAttribute("data-url", tab.url);
+        DOMTab.url = tab.url;
         if (title.length > 0) {
             title = title+"\n"+tab.url;
         } else {
@@ -103,15 +105,15 @@ const initDOMTab = function(DOMTab, tab, type) {
     }
 
     if (tab.favIconUrl !== undefined && tab.favIconUrl !== "") {
-        DOMCTitle.children["img"].setAttribute("src", tab.favIconUrl);
+        DOMTitle.children["img"].setAttribute("src", tab.favIconUrl);
     } else if (tab.url !== undefined) {
-        DOMCTitle.children["img"].setAttribute(
+        DOMTitle.children["img"].setAttribute(
             "src",
             chrome.runtime.getURL("/_favicon/")
             + "?pageUrl="+tab.url+"&size=16"
         );
     } else {
-        DOMCTitle.children["img"].setAttribute("hidden", "");
+        DOMTitle.children["img"].setAttribute("hidden", "");
     }
 
     return DOMTab;
@@ -133,81 +135,92 @@ const findId = function(id, ids, start) {
 }
 
 /**@type{(
- *  tabs: Array<chrome.tabs.Tab>,
  *  windows: Array<chrome.windows.Window>,
  *  groups: Array<chrome.tabGroups.TabGroup>
  * ) => undefined}*/
-const render = function(tabs, windows, groups, DOMFragment) {
-    let windowIdx = 0;
-    let groupIdx = 0;
-    let windowId = -1;
+const render = function(windows, groups, DOMFragment) {
     let groupId = -1;
     let group = false;
     let popup = false;
+
     let DOMWindow = undefined;
     let DOMGroup = undefined;
     let DOMPopup = DOMTemplatePopups.cloneNode(true);
 
-    for (let tab of tabs) {
-        if (windowId !== tab.windowId && windowIdx < windows.length) {
-            const i = findId(tab.windowId, windows, windowIdx);
-            if (i == -1) {
-                throw Error("ERROR: findId");
-            }
-            windowId = tab.windowId;
-            windowIdx = i + 1;
-            if (windows[i].type === WINDOW_TYPE_NORMAL) {
-                popup = false;
-                DOMWindow = initDOMWindow(
-                    DOMTemplateWindow.cloneNode(true),
-                    windows[i]
-                );
-                DOMFragment.appendChild(DOMWindow);
-            } else if (windows[i].type === WINDOW_TYPE_POPUP) {
-                popup = true;
-            } else {
-                continue;
-            }
-        }
-        if (tab.groupId === -1) {
-            group = false;
-        } else if (tab.groupId !== groupId
-            && groupIdx < groups.length
-        ) {
-            const i = findId(tab.groupId, groups, groupIdx);
-            if (i == -1) {
-                throw Error("ERROR: findId");
-            }
-            DOMGroup = initDOMGroup(
-                DOMTemplateGroup.cloneNode(true),
-                groups[i]
+    DOMPopup.appendChild(DOMTemplateDrop.cloneNode(true));
+    DOMFragment.appendChild(DOMTemplateDrop.cloneNode(true));
+
+    for (let window of windows) {
+        if (window.type === WINDOW_TYPE_NORMAL) {
+            popup = false;
+            DOMWindow = initDOMWindow(
+                DOMTemplateWindow.cloneNode(true),
+                window
             );
-            if (tab.active) {
-                DOMGroup.setAttribute("open", "");
-            }
-            DOMWindow.appendChild(DOMGroup);
-            groupIdx = i + 1;
-            groupId = tab.groupId;
-            group = true;
-        }
-        if (group) {
-            DOMGroup.appendChild(initDOMTab(
-                DOMTemplateTab.cloneNode(true),
-                tab,
-                "normal"
-            ));
-        } else if (popup) {
-            DOMPopup.appendChild(initDOMTab(
-                DOMTemplateTab.cloneNode(true),
-                tab,
-                "popup"
-            ));
+            DOMFragment.appendChild(DOMWindow);
+            DOMFragment.appendChild(DOMTemplateDrop.cloneNode(true));
+            DOMWindow.children["normal"].appendChild(
+                DOMTemplateDrop.cloneNode(true)
+            );
+        } else if (window.type === WINDOW_TYPE_POPUP) {
+            popup = true;
         } else {
-            DOMWindow.appendChild(initDOMTab(
-                DOMTemplateTab.cloneNode(true),
-                tab,
-                "normal"
-            ));
+            continue;
+        }
+        for (let tab of window.tabs) {
+            if (tab.groupId === -1) {
+                group = false;
+            } else if (tab.groupId !== groupId) {
+                const i = findId(tab.groupId, groups, 0);
+                if (i == -1) {
+                    throw Error("ERROR: findId");
+                }
+                groupId = tab.groupId;
+                group = true;
+
+                DOMGroup = initDOMGroup(
+                    DOMTemplateGroup.cloneNode(true),
+                    groups[i]
+                );
+                DOMWindow.children["normal"].append(
+                    DOMGroup,
+                    DOMTemplateDrop.cloneNode(true)
+                );
+                DOMGroup.appendChild(DOMTemplateDrop.cloneNode(true));
+            }
+            if (group) {
+                if (tab.active) {
+                    DOMGroup.setAttribute("open", "");
+                }
+                DOMGroup.append(
+                    initDOMTab(DOMTemplateTab.cloneNode(true), tab, "normal"),
+                    DOMTemplateDrop.cloneNode(true)
+                );
+            } else if (popup) {
+                DOMPopup.append(
+                    initDOMTab(DOMTemplateTab.cloneNode(true), tab, "popup"),
+                    DOMTemplateDrop.cloneNode(true)
+                );
+            } else {
+                if (tab.pinned) {
+                    DOMWindow.children["pinned"].append(
+                        initDOMTab(
+                            DOMTemplateTab.cloneNode(true),
+                            tab,
+                            "normal"
+                        )
+                    );
+                } else {
+                    DOMWindow.children["normal"].append(
+                        initDOMTab(
+                            DOMTemplateTab.cloneNode(true),
+                            tab,
+                            "normal"
+                        ),
+                        DOMTemplateDrop.cloneNode(true)
+                    );
+                }
+            }
         }
     }
     DOMFragment.appendChild(DOMPopup);
@@ -238,85 +251,290 @@ const DOMMainOnclick = function(event) {
     const target = event.target;
     //Tab
     if (target.name === "title") {
+        if (event.shiftKey) {
+            return;
+        } else if (event.ctrlKey) {
+            return;
+        }
         const DOMTab = target.parentElement;
-        const DOMWindow = DOMTab.parentElement;
+        let DOMWindow;
+        if (DOMTab.parentElement.name === "normal") {
+            DOMWindow = DOMTab.parentElement.parentElement;
+        } else {
+            DOMWindow = DOMTab.parentElement.parentElement.parentElement;
+        }
 
-        const id = DOMTab.getAttribute("data-id");
-        const focus = DOMWindow.hasAttribute("data-focus");
+        chrome.tabs.update(DOMTab.tabId, TAB_ACTIVE);
 
-        chrome.tabs.update(Number(id), TAB_ACTIVE);
-        if (!focus) {
-            const windowId = DOMTab.getAttribute("data-window-id");
-            chrome.windows.update(Number(windowId), WINDOW_FOCUS);
+        if (!DOMWindow.focused) {
+            chrome.windows.update(DOMTab.windowId, WINDOW_FOCUS);
         }
     } else if (target.name === "unpin") {
         const DOMTab = target.parentElement;
-        const id = DOMTab.getAttribute("data-id");
+        const DOMNormal = DOMTab.parentElement.nextElementSibling;
 
         DOMTab.removeAttribute("data-pin");
+        DOMTab.setAttribute("draggable", "true");
+
+        DOMNormal.prepend(DOMTab);
 
         TabPinned.pinned = false;
-        chrome.tabs.update(Number(id), TabPinned);
+        chrome.tabs.update(DOMTab.tabId, TabPinned);
+
     } else if (target.name === "close") {
-        const DOMTab = target.parentElement;
-        const id = DOMTab.getAttribute("data-id");
+        if (target.parentElement.hasAttribute("data-tab")) {
+            const DOMTab = target.parentElement;
+            const id = DOMTab.tabId;
+            DOMTab.remove();
+            chrome.tabs.remove(id);
+            return;
+        }
+        const DOMParent = target.parentElement.parentElement;
+        if (DOMParent.hasAttribute("data-group")) {
+            group.length = 0;
 
-        DOMTab.remove();
-
-        chrome.tabs.remove(Number(id));
+            DOMParent.firstElementChild.remove();
+            for (let tab of DOMParent.children) {
+                const id = tab.tabId;
+                if (id !== null) {
+                    group.push(id);
+                }
+            }
+            DOMParent.remove();
+            chrome.tabs.remove(group);
+            return;
+        }
+        if (DOMParent.hasAttribute("data-window")) {
+            const id = DOMParent.windowId;
+            if (id !== null) {
+                if (!DOMParent.focused) {
+                    DOMParent.remove();
+                }
+                chrome.windows.remove(id);
+            }
+            return;
+        }
     } else if (target.name === "copy") {
         const DOMTab = target.parentElement;
-        const url = DOMTab.getAttribute("data-url");
+        const url = DOMTab.url;
         if (url !== null) {
             navigator.clipboard.writeText(url);
         }
 
     //Group
     } else if (target.name === "ungroup") {
-        const DOMGroup = target.parentElement;
+        const DOMGroup = target.parentElement.parentElement;
         const DOMPrevTab = DOMGroup.previousElementSibling;
 
+        group.length = 0;
+        DOMGroup.firstElementChild.remove();
         for (let tab of DOMGroup.children) {
-            const id = tab.getAttribute("data-id");
+            const id = tab.tabId;
             if (id !== null) {
-                group.push(Number(id));
+                group.push(id);
             }
         }
-        DOMGroup.firstElementChild.remove();
-
-        HTMLElement.prototype.after.apply(
+        Element.prototype.after.apply(
             DOMPrevTab,
             DOMGroup.children
         );
+        DOMGroup.remove();
+
         chrome.tabs.ungroup(group)
     }
 };
+const DropTemporal = {
+    element: undefined,
+    id: -1,
+    type: "tab",
+    currentWindowId: -1,
+    groupId: -1,
+    index: 0
+};
+
+
+/**@type{(event: DragEvent) => undefined}*/
+const DOMContainerOndragstart = function(event) {
+    const target = event.target;
+    if (target.hasAttribute("data-tab")) {
+        const url = target.url;
+        if (url !== null) {
+            event.dataTransfer.setData("text/uri-list", url);
+        }
+        if (target.groupId === undefined) {
+            throw Error("ERROR: [data-group] element not have groupId");
+        }
+        DropTemporal = target.groupId;
+
+        const id = target.tabId;
+        const windowId = target.windowId;
+        const groupId = target.groupId;
+        if (id === undefined) {
+            throw Error("ERROR: [data-tab] element not have tabId")
+        }
+        if (windowId === undefined) {
+            throw Error("ERROR: [data-tab] element not have windowId");
+        }
+        if (groupId === undefined) {
+            throw Error("ERROR: [data-tab] element not have groupId");
+        }
+        DropTemporal.type = "tab";
+        DropTemporal.element = target;
+        DropTemporal.id = id;
+        DropTemporal.currentWindowId = windowId;
+        DropTemporal.groupId = target.groupId;
+        event.dataTransfer.effectAllowed = "all"
+        DOMContainer.setAttribute("data-dropable", "");
+
+    } else if (target.hasAttribute("data-group")) {
+        event.dataTransfer.effectAllowed = "all"
+        DropTemporal.element = target;
+        DropTemporal.type = "group";
+        DropTemporal.groupId = target.groupId;
+
+        DOMContainer.setAttribute("data-dropable", "");
+    }
+};
+
+/**@type{(event: DragEvent) => undefined}*/
+const DOMContainerOndragend = function() {
+    DropTemporal.element = undefined;
+    DOMContainer.removeAttribute("data-dropable");
+}
+
+/**@type{(event: DragEvent) => undefined}*/
+const DOMContainerOndragover = function(event) {
+    if (event.target.hasAttribute("data-select")) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move"
+    }
+};
+
+let timeout = undefined;
+const detailsTimeout = function(target) {
+    if (!target.parentElement.open) {
+        target.parentElement.setAttribute("open", "");
+    }
+    timeout = undefined;
+}
+
+/**@type{(event: DragEvent) => undefined}*/
+const DOMContainerOndragenter = function(event) {
+    const target = event.target;
+    if (timeout !== undefined) {
+        clearTimeout(timeout);
+    }
+    if (target.hasAttribute("data-drop")) {
+        event.preventDefault();
+        const Prev = target.previousElementSibling;
+        const Next = target.nextElementSibling;
+        if (Prev !== DropTemporal.element && Next !== DropTemporal.element) {
+            target.setAttribute("data-select", "");
+        }
+    } else if (target.localName === "summary") {
+        const DOMParent = target.parentElement;
+        if (DropTemporal.element.hasAttribute("data-group")
+            && DOMParent.hasAttribute("data-group")
+        ) {
+            return;
+        }
+        if (DOMParent.hasAttribute("data-window")
+            || DOMParent.hasAttribute("data-group")
+            || DOMParent.hasAttribute("data-popups")
+        ) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move"
+            target.setAttribute("data-select", "");
+            if (timeout !== undefined) {
+                clearTimeout(timeout);
+            }
+            timeout = setTimeout(detailsTimeout, 1000, target);
+        }
+    }
+};
+
+/**@type{(event: DragEvent) => undefined}*/
+const DOMContainerOndragleave = function(event) {
+    const target = event.target;
+    if (target.hasAttribute("data-drop")) {
+        event.preventDefault();
+        target.removeAttribute("data-select", "");
+    } else if (target.hasAttribute("data-select")) {
+        event.preventDefault();
+        target.removeAttribute("data-select", "");
+    }
+};
+
+/**@type{(event: DragEvent) => undefined}*/
+const DOMContainerOndrop = function(event) {
+    event.preventDefault();
+    const target = event.target;
+    if (timeout !== undefined) {
+        clearTimeout(timeout);
+        timeout = undefined;
+    }
+    if (target.hasAttribute("data-drop")) {
+        if (target.hasAttribute("data-select")) {
+            target.after(
+                DropTemporal.element,
+                DropTemporal.element.nextElementSibling
+            );
+            target.removeAttribute("data-select");
+        }
+        console.info(event);
+
+    } else if (target.hasAttribute("data-select")) {
+        const DOMParent = target.parentElement;
+        target.removeAttribute("data-select");
+        if (DOMParent.hasAttribute("data-window")) {
+            DOMParent.children["normal"].append(
+                DropTemporal.element,
+                DropTemporal.element.nextElementSibling
+            );
+            const id = DOMParent.windowId;
+            chrome.tabs.move();
+        } else if (DOMParent.hasAttribute("data-popups")) {
+            DOMParent.append(
+                DropTemporal.element,
+                DropTemporal.element.nextElementSibling
+            );
+        } else if (DOMParent.hasAttribute("data-group")) {
+            DOMParent.append(
+                DropTemporal.element,
+                DropTemporal.element.nextElementSibling
+            );
+        }
+    }
+};
+
 
 const main = function(promisedata) {
-    const tabs = promisedata[0];
+    const windows = promisedata[0];
     const groups = promisedata[1];
-    const windows = promisedata[2];
-    const sessions = promisedata[3];
+    const sessions = promisedata[2];
 
     console.info({
-        tabs,
         groups,
         windows,
         sessions
     });
 
     DOMContainer.appendChild(
-        render(tabs, windows, groups, DOMFragment)
+        render(windows, groups, DOMFragment)
     );
 
     DOMHeaderNav.addEventListener("click", DOMHeaderNavOnclick, false);
 
     DOMMain.addEventListener("click", DOMMainOnclick, false);
+    DOMContainer.addEventListener("dragstart", DOMContainerOndragstart, false);
+    DOMContainer.addEventListener("dragend", DOMContainerOndragend, false);
+    DOMContainer.addEventListener("dragover", DOMContainerOndragover, false);
+    DOMContainer.addEventListener("dragenter", DOMContainerOndragenter, false);
+    DOMContainer.addEventListener("dragleave", DOMContainerOndragleave, false);
+    DOMContainer.addEventListener("drop", DOMContainerOndrop, false);
 };
 
 Promise.all([
-    chrome.tabs.query({}),
-    chrome.tabGroups.query({}),
     chrome.windows.getAll({
         populate: true,
         windowTypes:[
@@ -324,5 +542,6 @@ Promise.all([
             WINDOW_TYPE_POPUP
         ]
     }),
+    chrome.tabGroups.query({}),
     chrome.sessions.getDevices()
 ]).then(main);

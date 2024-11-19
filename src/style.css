@@ -45,7 +45,7 @@ html.dark {
     --blue: #b4c3ff;
     --red: #ff9494;
     --yellow: #ffff9f;
-    --geen:#c3ffc3;
+    --green:#c3ffc3;
     --pink: #ffc0f4;
     --purple: #e7a9ff;
     --cyan: #cbffff;
@@ -92,7 +92,6 @@ body>header {
     justify-content: space-between;
     padding: 10px;
     border-bottom: 1px solid var(--color-hover-l);
-    margin-bottom: 5px;
 }
 
 body>header h1 {
@@ -118,7 +117,7 @@ body>main::-webkit-scrollbar-thumb {
 }
 
 body>main {
-    height: 538px;
+    max-height: 538px;
     padding: 0 5px 5px;
     overflow: auto;
 }
@@ -133,30 +132,30 @@ main:not([data-windows-id]) [data-window]>summary [name=id] {
     display: none;
 }
 
+
 summary {
+    position: relative;
     display:flex;
     align-items: center;
-    gap: 1ch;
     border-radius: var(--border-radius);
     height: var(--item-height);
     padding: 0 5px;
+    outline-offset: -1px;
+    background-color: var(--summary-color-bg);
 }
 
 summary:not(:hover) {
-    background-color: var(--color-bg);
+    --summary-color-bg: var(--color-bg);
 }
 
 summary:hover {
-    background-color: var(--color-hover);
+    --summary-color-bg: var(--color-hover);
 }
 
 summary:not(:hover)>.l {
     display: none;
 }
 
-summary [name=title] {
-    flex-grow: 1;
-}
 
 summary .icon-triangle {
     width: var(--icon-size-small);
@@ -164,24 +163,85 @@ summary .icon-triangle {
     transition: transform 200ms ease-out;
 }
 
-
 details:not([open])>summary .icon-triangle {
     transform: rotate(90deg);
 }
+
 details[open]>summary .icon-triangle {
     transform: rotate(180deg);
 }
 
-[data-window]>:not(details,summary) {
+[data-window]>[name="normal"]>[data-tab] {
     padding-left: 15px;
 }
 
-details[data-focus]>summary .icon-monitor {
-    fill: currentColor;
+details>summary>[name=title] {
+    box-sizing: border-box;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 6px;
+    border-radius: var(--border-radius);
+    gap: 1ch;
+    width: min-content;
+    margin-left: 1ch;
+}
+details[data-focus]>summary [name=title] {
+    border: 2px solid var(--color);
 }
 
-details[data-focus]>summary [name=title] span {
-    text-decoration: underline;
+
+[data-window]>summary {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+}
+
+[data-popups]>summary {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+}
+
+[data-dropable] summary::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+[data-drop] {
+    box-sizing: border-box;
+    position: relative;
+    width: 100%;
+    height: 4px;
+    z-index: 5;
+    transition: height .2s linear;
+}
+
+:is([data-window],[data-popups]) [data-drop] {
+    width: calc(100% - 10px);
+    translate: 10px;
+}
+[data-group] [data-drop] {
+    width: calc(100% - 20px);
+    translate: 20px;
+}
+
+[data-drop][data-select] {
+    height: 15px;
+    transition-delay: .4s;
+}
+
+[data-drop][data-select]::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 30px;
+    top: -12px;
+    left: 0;
+    background: tan;
+    opacity: .4;
 }
 
 [data-group]>summary {
@@ -192,27 +252,63 @@ details[data-focus]>summary [name=title] span {
     padding-left: 25px;
 }
 
-[data-group]>summary [name=title] {
-    display: flex;
-    align-items: center;
+[data-group][open] summary::before {
+    content: "";
+    position: absolute;
+    height: 8px;
+    width: 1px;
+    background: var(--group-color);
+    bottom: 6px;
+    translate: 7px;
+}
+
+[data-group][open] [data-tab]::after {
+    content: "";
+    position: absolute;
+    height: 28px;
+    width: 1px;
+    background: var(--group-color);
+    top: 6px;
+    translate: -3px;
 }
 
 [data-group] .icon-triangle {
     --color: var(--group-color);
+    flex-shrink: 0;
+}
+
+[data-group]>summary [name=title] {
+    padding: 0;
+    overflow: hidden;
+    flex-grow: 1;
+    border-radius: 0;
+}
+
+[data-group]>summary [name=title]::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    height: 100%;
+    width: 3ch;
+    background: linear-gradient(to left, var(--summary-color-bg), transparent);
+
 }
 
 [data-group]>summary span {
     --color: var(--color-bg);
     box-sizing: border-box;
-    display: inline-flex;
-    align-items: center;
+    display: flex;
     gap: 1ch;
-    padding: 3px 6px;
-    border-radius: var(--border-radius);
     background-color: var(--group-color);
     color: var(--color);
+    padding: 3px 6px;
+    border-radius: var(--border-radius);
+    white-space: nowrap;
 }
 
+[data-tab][data-pin] {
+    padding-left: 5px;
+}
 
 [data-tab] {
     --tab-color-bg: var(--color-bg);
@@ -225,6 +321,7 @@ details[data-focus]>summary [name=title] span {
     padding-right: 5px;
     height: var(--item-height);
     background-color: var(--tab-color-bg);
+    outline-offset: -1px;
 }
 
 [data-tab]:hover {
@@ -257,7 +354,6 @@ details[data-focus]>summary [name=title] span {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 5px;
 
     border: none;
 
@@ -267,7 +363,6 @@ details[data-focus]>summary [name=title] span {
     background: transparent;
     overflow: hidden;
 
-    padding: 0 5px;
     margin: 0;
     height: 100%;
 }
@@ -282,13 +377,16 @@ details[data-focus]>summary [name=title] span {
 
 [data-tab] button[name=title] .title {
     box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 1ch;
     white-space: nowrap;
     padding: 3px 6px;
     border-radius: var(--border-radius);
 }
 
 [data-tab][data-active] button[name=title] .title {
-    text-decoration: underline;
+    border: 2px solid var(--color);
 }
 
 [data-tab]>div[name=more] {
@@ -298,7 +396,6 @@ details[data-focus]>summary [name=title] span {
 .shell {
     position: relative;
 }
-
 .shell::after {
     content: "";
     position: absolute;

@@ -9,8 +9,6 @@
     --z-index-mid: 2;
     --z-index-high: 3;
 
-    --item-height: 35px;
-
     --border-radius: 5px;
 
     --item-height: 40px;
@@ -118,7 +116,7 @@ body>main::-webkit-scrollbar-thumb {
 
 body>main {
     max-height: 538px;
-    padding: 0 5px 5px;
+    padding: 5px;
     overflow: auto;
 }
 
@@ -133,7 +131,9 @@ main:not([data-windows-id]) [data-window]>summary [name=id] {
 }
 
 
+
 summary {
+    --summary-color-bg: var(--color-bg);
     position: relative;
     display:flex;
     align-items: center;
@@ -142,10 +142,6 @@ summary {
     padding: 0 5px;
     outline-offset: -1px;
     background-color: var(--summary-color-bg);
-}
-
-summary:not(:hover) {
-    --summary-color-bg: var(--color-bg);
 }
 
 :not([data-dropable]) summary:hover {
@@ -196,6 +192,10 @@ details[data-focus]>summary [name=title] {
     grid-template-columns: auto 1fr auto auto;
 }
 
+summary[data-select] {
+    background: var(--color-hover);
+}
+
 [data-popups]>summary {
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -210,38 +210,78 @@ details[data-focus]>summary [name=title] {
     left: 0;
 }
 
+
 [data-drop] {
     box-sizing: border-box;
     position: relative;
     width: 100%;
-    height: 4px;
-    z-index: 5;
+    height: 6px;
     transition: height .2s linear;
+    border-radius: var(--border-radius);
+}
+
+[data-dropable] :is([data-window], [data-popups]) [data-drop]::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 34px;
+    top: -14px;
+    left: 0;
+}
+:not([data-dropable]) [data-drop][data-drop-window] {
+    visibility: hidden;
+}
+[data-new-window] [data-drop][data-drop-window] {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    height: var(--item-height);
+    background: var(--color-hover);
+    visibility: visible;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1ch;
+    font-size: var(--font-size);
+    z-index: 20;
+}
+
+
+
+[data-dropable] [data-drop][data-drop-window]::after {
+    content: unset;
+}
+
+
+[data-drag] {
+    z-index: 10;
 }
 
 :is([data-window],[data-popups]) [data-drop] {
-    width: calc(100% - 10px);
+    width: calc(100% - 20px);
     translate: 10px;
 }
 [data-group] [data-drop] {
-    width: calc(100% - 20px);
+    width: calc(100% - 40px);
     translate: 20px;
 }
 
 [data-drop][data-select] {
-    height: 15px;
-    transition-delay: .4s;
+    height: 34px;
+    background: var(--color-hover);
 }
 
 [data-drop][data-select]::after {
     content: "";
     position: absolute;
     width: 100%;
-    height: 30px;
-    top: -12px;
+    height: var(--item-height);
+    top: 0px;
     left: 0;
-    background: tan;
     opacity: .4;
+}
+[data-group] [data-drop][data-select] {
+    background: var(--group-color);
 }
 
 [data-group]>summary {

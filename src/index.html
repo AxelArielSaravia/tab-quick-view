@@ -7,7 +7,7 @@
         <script src="/main.js" defer></script>
         <template id="template">
             <div data-drop></div>
-            <div data-tab draggable="true">
+            <div data-tab draggable="true" tabindex="0">
                 <button name="unpin"
                     class="button-icon shell"
                     aria-label="unpin tab"
@@ -32,6 +32,7 @@
                     class="shell"
                     aria-label="activate tab"
                     type="button"
+                    tabindex="-1"
                 >
                     <p name="title" class="title">
                         <img
@@ -257,7 +258,7 @@
                     </button>
                 </summary>
             </details>
-            <details data-window>
+            <details data-window draggable="true">
                 <summary>
                     <svg xmlns="http://www.w3.org/2000/svg"
                         class="icon icon-triangle"
@@ -335,8 +336,8 @@
                         </svg>
                     </button>
                 </summary>
-                <div name="pinned"></div>
-                <div name="normal"></div>
+                <div name="pinned" data-w-pinned></div>
+                <div name="normal" data-w-normal></div>
             </details>
             <details data-popups>
                 <summary>
@@ -484,7 +485,25 @@
             </nav>
         </header>
         <main id="main" data-show="container">
-            <section name="container"></section>
+            <section name="container">
+                <div data-drop data-drop-window>
+                    Add Window <svg xmlns="http://www.w3.org/2000/svg"
+                        class="icon icon-monitor"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect width="20" height="14" x="2" y="3" rx="2"/>
+                        <line x1="8" x2="16" y1="21" y2="21"/>
+                        <line x1="12" x2="12" y1="17" y2="21"/>
+                    </svg>
+                </div>
+            </section>
             <section name="more">
                 <header>
                     <h2>Configuration</h2>

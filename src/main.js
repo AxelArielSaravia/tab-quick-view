@@ -407,8 +407,9 @@ const DragTemporal = {
 };
 
 /**@type{(event: DragEvent) => undefined}*/
-const DOMContainerOndragstart = function(event) {
+const DOMMainOndragstart = function(event) {
     const target = event.target;
+    console.info(target);
     if (target.hasAttribute("data-tab")) {
         const url = target.url;
         event.dataTransfer.setData("text/uri-list", url);
@@ -421,7 +422,7 @@ const DOMContainerOndragstart = function(event) {
 
         target.setAttribute("data-drag", "");
         DOMContainer.setAttribute("data-dropable", "");
-        DOMContainer.setAttribute("data-new-window", "");
+        DOMMain.setAttribute("data-new-window", "");
 
         event.dataTransfer.effectAllowed = "all"
 
@@ -439,7 +440,7 @@ const DOMContainerOndragstart = function(event) {
 
         target.setAttribute("data-drag", "");
         DOMContainer.setAttribute("data-dropable", "");
-        DOMContainer.setAttribute("data-new-window", "");
+        DOMMain.setAttribute("data-new-window", "");
 
     } else if (target.hasAttribute("data-window")) {
         event.dataTransfer.effectAllowed = "all"
@@ -453,24 +454,24 @@ const DOMContainerOndragstart = function(event) {
         DragTemporal.id = target.windowId;
 
         target.setAttribute("data-drag", "");
-        DOMContainer.setAttribute("data-dropable", "");
+        DOMMain.setAttribute("data-dropable", "");
     }
 };
 
 /**@type{(event: DragEvent) => undefined}*/
-const DOMContainerOndragend = function() {
+const DOMMainOndragend = function() {
     console.info("DRAG_END");
     if (DragTemporal.DOMElement !== undefined) {
         DragTemporal.DOMElement.removeAttribute("data-drag");
         DOMContainer.removeAttribute("data-dropable");
-        DOMContainer.removeAttribute("data-new-window");
+        DOMMain.removeAttribute("data-new-window");
         DragTemporal.DOMElement = undefined;
         DragTemporal.DOMParent = undefined;
     }
 };
 
 /**@type{(event: DragEvent) => undefined}*/
-const DOMContainerOndragover = function(event) {
+const DOMMainOndragover = function(event) {
     if (event.target.hasAttribute("data-select")) {
         event.preventDefault();
         console.info("DRAG_OVER");
@@ -487,10 +488,14 @@ const detailsTimeout = function(parentElement) {
 };
 
 /**@type{(event: DragEvent) => undefined}*/
-const DOMContainerOndragenter = function(event) {
+const DOMMainOndragenter = function(event) {
     const target = event.target;
     if (timeout !== undefined) {
         clearTimeout(timeout);
+    }
+    console.info(target);
+    if (!DragTemporal.DOMElement) {
+        return;
     }
     if (target.hasAttribute("data-drop")) {
         event.preventDefault();
@@ -541,7 +546,6 @@ const DOMContainerOndragenter = function(event) {
             || DOMParent.hasAttribute("data-group")
             || DOMParent.hasAttribute("data-popups")
         ) {
-            console.info("DRAG_ENTER");
             event.preventDefault();
             event.dataTransfer.dropEffect = "move"
             target.setAttribute("data-select", "");
@@ -556,7 +560,7 @@ const DOMContainerOndragenter = function(event) {
 };
 
 /**@type{(event: DragEvent) => undefined}*/
-const DOMContainerOndragleave = function(event) {
+const DOMMainOndragleave = function(event) {
     const target = event.target;
     if (target.hasAttribute("data-select")) {
         event.preventDefault();
@@ -791,7 +795,7 @@ const createTabPopups = async function(DOMElement, DOMDrop, DOMParent) {
 
 
 /**@type{(event: DragEvent) => undefined}*/
-const DOMContainerOndrop = function(event) {
+const DOMMainOndrop = function(event) {
     event.preventDefault();
     const target = event.target;
     if (timeout !== undefined) {
@@ -804,30 +808,30 @@ const DOMContainerOndrop = function(event) {
     const DOMParent = target.parentElement;
     target.removeAttribute("data-select");
 
-    if (target.hasAttribute("data-drop")) {
-        if (target.hasAttribute("data-drop-window")) {
-            if (DragTemporal.type === "tab") {
-                WindowTemporal.DOMElement = DragTemporal.DOMElement;
-                WindowTemporal.type = DragTemporal.type;
+    if (target.hasAttribute("data-drop-window")) {
+        if (DragTemporal.type === "tab") {
+            WindowTemporal.DOMElement = DragTemporal.DOMElement;
+            WindowTemporal.type = DragTemporal.type;
 
-                WindowsCreateWithTab.focused = false;
-                WindowsCreateWithTab.type = "normal";
-                WindowsCreateWithTab.tabId = DragTemporal.id;
-                chrome.windows.create(
-                    WindowsCreateWithTab,
-                    WindowsCreateWithTabCallback
-                );
-            } else if (DragTemporal.type === "group") {
-                WindowTemporal.DOMElement = DragTemporal.DOMElement;
-                WindowTemporal.type = DragTemporal.type;
+            WindowsCreateWithTab.focused = false;
+            WindowsCreateWithTab.type = "normal";
+            WindowsCreateWithTab.tabId = DragTemporal.id;
+            chrome.windows.create(
+                WindowsCreateWithTab,
+                WindowsCreateWithTabCallback
+            );
+        } else if (DragTemporal.type === "group") {
+            WindowTemporal.DOMElement = DragTemporal.DOMElement;
+            WindowTemporal.type = DragTemporal.type;
 
-                WindowsCreate.type = "normal";
-                chrome.windows.create(
-                    WindowsCreate,
-                    WindowsCreateWithGroupCallback
-                );
-            }
-        } else if (DOMParent.hasAttribute("data-group")) {
+            WindowsCreate.type = "normal";
+            chrome.windows.create(
+                WindowsCreate,
+                WindowsCreateWithGroupCallback
+            );
+        }
+    } else if (target.hasAttribute("data-drop")) {
+        if (DOMParent.hasAttribute("data-group")) {
             target.before(
                 DragTemporal.DOMElement.previousElementSibling,
                 DragTemporal.DOMElement,
@@ -979,7 +983,7 @@ const DOMContainerOndrop = function(event) {
 
     DragTemporal.DOMElement.removeAttribute("data-drag");
     DOMContainer.removeAttribute("data-dropable");
-    DOMContainer.removeAttribute("data-new-window");
+    DOMMain.removeAttribute("data-new-window");
 
     DragTemporal.DOMElement = undefined;
     DragTemporal.DOMParent = undefined;
@@ -1007,12 +1011,12 @@ const main = function(promisedata) {
     DOMHeaderNav.addEventListener("click", DOMHeaderNavOnclick, false);
 
     DOMMain.addEventListener("click", DOMMainOnclick, false);
-    DOMContainer.addEventListener("dragstart", DOMContainerOndragstart, false);
-    DOMContainer.addEventListener("dragend", DOMContainerOndragend, false);
-    DOMContainer.addEventListener("dragover", DOMContainerOndragover, false);
-    DOMContainer.addEventListener("dragenter", DOMContainerOndragenter, false);
-    DOMContainer.addEventListener("dragleave", DOMContainerOndragleave, false);
-    DOMContainer.addEventListener("drop", DOMContainerOndrop, false);
+    DOMMain.addEventListener("dragstart", DOMMainOndragstart, false);
+    DOMMain.addEventListener("dragend", DOMMainOndragend, false);
+    DOMMain.addEventListener("dragover", DOMMainOndragover, false);
+    DOMMain.addEventListener("dragenter", DOMMainOndragenter, false);
+    DOMMain.addEventListener("dragleave", DOMMainOndragleave, false);
+    DOMMain.addEventListener("drop", DOMMainOndrop, false);
 };
 
 Promise.all([

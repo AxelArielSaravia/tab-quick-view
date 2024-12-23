@@ -12,6 +12,7 @@
     --border-radius: 5px;
 
     --item-height: 40px;
+    --tabs-padding: 5px;
     /*height: 596px;*/
 }
 
@@ -106,25 +107,40 @@ body>header nav {
 }
 
 
-body>main::-webkit-scrollbar {
+main>:is([name=container],[name=more],[name=keyboard])::-webkit-scrollbar {
     width: 8px;
 }
 
-body>main::-webkit-scrollbar-thumb {
+main>:is([name=container],[name=more],[name=keyboard])::-webkit-scrollbar-thumb {
     background-color: var(--color-hover-l);
 }
 
 body>main {
+    padding: 0;
+    margin: 0;
+}
+
+main [name=container],
+main [name=more],
+main [name=keyboard] {
     max-height: 538px;
     padding: 5px;
     overflow: auto;
 }
 
-main[data-show=container]>:not([name=container]),
-main[data-show=more]>:not([name=more]),
-main[data-show=keyboard]>:not([name=keyboard]) {
-    display:none;
+
+
+main>[name=container],
+main>[name=more],
+main>[name=keyboard] {
+    display: none;
 }
+main[data-show=container]>[name=container],
+main[data-show=more]>[name=more],
+main[data-show=keyboard]>[name=keyboard] {
+    display:block;
+}
+
 
 main:not([data-windows-id]) [data-window]>summary [name=id] {
     display: none;
@@ -228,30 +244,32 @@ summary[data-select] {
     top: -14px;
     left: 0;
 }
-:not([data-dropable]) [data-drop][data-drop-window] {
-    visibility: hidden;
-}
-[data-new-window] [data-drop][data-drop-window] {
-    position: sticky;
-    top: 0;
-    width: 100%;
-    height: var(--item-height);
-    background: var(--color-hover);
-    visibility: visible;
+
+
+[data-drop-window] {
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 1ch;
     font-size: var(--font-size);
-    z-index: 20;
+    position: relative;
+
+    height: var(--item-height);
+    margin: 10px;
+
+    background: var(--color-hover);
+
+    border-radius: var(--border-radius);
+
+    transition: height .2s linear;
 }
 
-
-
-[data-dropable] [data-drop][data-drop-window]::after {
-    content: unset;
+:not([data-new-window])>[data-drop-window] {
+    visibility: hidden;
+    margin: 0;
+    height: 0;
 }
-
 
 [data-drag] {
     z-index: 10;
@@ -266,12 +284,12 @@ summary[data-select] {
     translate: 20px;
 }
 
-[data-drop][data-select] {
+:is([data-drop],[data-drop-window])[data-select] {
     height: 34px;
     background: var(--color-hover);
 }
 
-[data-drop][data-select]::after {
+:is([data-drop],[data-drop-window])[data-select]::after {
     content: "";
     position: absolute;
     width: 100%;
